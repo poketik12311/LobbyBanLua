@@ -1,35 +1,21 @@
-local ui_get = ui.get
-local console_cmd = client.exec
+local enable = ui.new_checkbox("rage", "other", "Lua resolver")
 
-local auto_buy_awp = ui.new_checkbox("MISC", "Miscellaneous", "Auto buy awp")
-local auto_buy_scar = ui.new_checkbox("MISC", "Miscellaneous", "Auto buy scar-20/g3sg1")
-local auto_buy_scout = ui.new_checkbox("MISC", "Miscellaneous", "Auto buy ssg-08")
-local auto_buy_nades = ui.new_checkbox("MISC", "Miscellaneous", "Auto buy nades/defuser/kevlar")
+local angles = { [0] = -58, [1] = 58, [2] = -48, [3] = 48, [4] = 0 } -- magic values
+local last_angle = 0
+local new_angle = 0
 
-local function on_round_prestart(e)
-    if ui_get(auto_buy_nades) then
-        console_cmd("buy hegrenade")
-        console_cmd("buy smokegrenade")
-        console_cmd("buy molotov")
-        console_cmd("buy incgrenade")
-        console_cmd("buy vesthelm")
-        console_cmd("buy defuser")
-        console_cmd("say bought nades and armor!")
-    end
-
-    if ui_get(auto_buy_awp) then
-        console_cmd("buy awp")
-        console_cmd("say bought awp!")
-        
-    elseif ui_get(auto_buy_scar) then
-        console_cmd("buy g3sg1")
-        console_cmd("buy scar20")
-        console_cmd("say bought auto!")
-    elseif ui_get(auto_buy_scout) then
-        console_cmd("buy ssg08")
-        console_cmd("say bought scout!")
-  end
-
+local function resolve(player)
+    plist.set(player, "Correction active", false) -- disable default correction because i have a superiority complex
+    plist.set(player, "Force body yaw", true) -- enable the forcing of the body yaw
+    new_angle = angles[math.random(0, 4)]
+    client.log("[resolver but good] missed player: " .. entity.get_player_name(player) .. ", at angle: " .. last_angle .. ", bruteforced to: " .. new_angle)
+    plist.set(player, "Force body yaw value", new_angle) -- force yaw value to random
+    last_angle = new_angle
 end
 
-client.set_event_callback("round_prestart", on_round_prestart)
+client.set_event_callback("aim_miss", function(info)
+    if not ui.get(enable) or info.reason ~= "?" then -- make sure we missed due to resolver :o
+        return
+    end
+    resolve(info.target) -- resolve that noob
+end)
